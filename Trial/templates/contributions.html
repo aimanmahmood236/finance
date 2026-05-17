@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Contributions - Expense Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: #667eea;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .btn-delete:hover {
+            background: #c82333;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .goal-selector {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .goal-summary {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 5px;
+        }
+        
+        .progress-bar-container {
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            width: 100%;
+            height: 20px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            transition: width 0.3s;
+            background: #28a745;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: white;
+        }
+        
+        .filter-bar {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-bar input, .filter-bar select {
+            width: auto;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .reset-btn {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        
+        .reset-btn:hover {
+            background: #5a6268;
+        }
+        
+        .total-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .total-card h4 {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .total-card p {
+            font-size: 28px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="/api/add-users/">Add User</a>
+            <a href="/api/add-categories/">Add Category</a>
+            <a href="/api/transactions-page/">Transactions</a>
+            <a href="/api/budgets-page/">Budgets</a>
+            <a href="/api/goals-page/">Goals</a>
+            <a href="/api/contributions-page/">Contributions</a>
+            <a href="/admin/">Admin Panel</a>
+        </div>
+        
+        <!-- Summary Statistics -->
+        <div class="card">
+            <h2>Contributions Summary</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div class="total-card">
+                    <h4>Total Contributions</h4>
+                    <p>UGX {{ total_contributions|default:"0"|floatformat:0 }}</p>
+                </div>
+                <div class="total-card">
+                    <h4>Number of Contributions</h4>
+                    <p>{{ contribution_count|default:"0" }}</p>
+                </div>
+                <div class="total-card">
+                    <h4>Active Goals</h4>
+                    <p>{{ active_goals|default:"0" }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Contribution Form -->
+        <div class="card">
+            <h2>Add Contribution to Goal</h2>
+            
+            {% if message %}
+                <div class="message {{ message_type }}">{{ message }}</div>
+            {% endif %}
+            
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Select Goal *</label>
+                    <select name="goal_id" required>
+                        <option value="">-- Select a Goal --</option>
+                        {% for goal in goals %}
+                            <option value="{{ goal.id }}">
+                                {{ goal.icon }} {{ goal.name }} - Saved: UGX {{ goal.current_amount|floatformat:0 }} / UGX {{ goal.target_amount|floatformat:0 }} ({{ goal.progress_percentage|floatformat:0 }}%)
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Contribution Amount (UGX) *</label>
+                    <input type="number" name="amount" step="0.01" placeholder="Enter amount" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" name="date" value="{{ today }}">
+                </div>
+                
+                <div class="form-group">
+                    <label>Link to Transaction (Optional)</label>
+                    <select name="transaction_id">
+                        <option value="">-- Select Transaction --</option>
+                        {% for transaction in transactions %}
+                            <option value="{{ transaction.id }}">
+                                {{ transaction.date }} - {{ transaction.description|default:"No description" }} - UGX {{ transaction.amount }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small>If this contribution came from a transaction, link it here</small>
+                </div>
+                
+                <button type="submit">Add Contribution</button>
+            </form>
+        </div>
+        
+        <!-- Filter Section -->
+        <div class="card">
+            <h2>Filter Contributions</h2>
+            <form method="GET" class="filter-bar">
+                <select name="filter_goal">
+                    <option value="">All Goals</option>
+                    {% for goal in goals %}
+                        <option value="{{ goal.id }}" {% if filter_goal == goal.id|stringformat:"s" %}selected{% endif %}>
+                            {{ goal.icon }} {{ goal.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <input type="date" name="start_date" value="{{ start_date }}" placeholder="Start Date">
+                <input type="date" name="end_date" value="{{ end_date }}" placeholder="End Date">
+                <button type="submit">Filter</button>
+                <a href="/api/contributions-page/" class="reset-btn">Reset</a>
+            </form>
+        </div>
+        
+        <!-- Contributions List -->
+        <div class="card">
+            <h2>Contribution History</h2>
+            
+            {% if contributions %}
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Goal</th>
+                                <th>Amount</th>
+                                <th>Transaction</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contribution in contributions %}
+                            <tr>
+                                <td>{{ contribution.date|date:"Y-m-d H:i" }}</td>
+                                <td>{{ contribution.goal.icon }} {{ contribution.goal.name }}
+                                    <br><small>Progress: {{ contribution.goal.progress_percentage|floatformat:0 }}%</small>
+                                </td>
+                                <td style="color: #28a745; font-weight: bold;">UGX {{ contribution.amount|floatformat:0 }}</td>
+                                <td>
+                                    {% if contribution.transaction %}
+                                        <a href="/api/transactions-page/?id={{ contribution.transaction.id }}" style="color: #667eea;">
+                                            Transaction #{{ contribution.transaction.id }}
+                                        </a>
+                                    {% else %}
+                                        <span style="color: #999;">No linked transaction</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="POST" action="/api/contributions/delete/{{ contribution.id }}/" style="display: inline;" onsubmit="return confirm('Delete this contribution? This will reduce the goal progress.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-delete">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #f8f9fa; font-weight: bold;">
+                                <td colspan="2"><strong>Total</strong></td>
+                                <td><strong>UGX {{ total_contributions|default:"0"|floatformat:0 }}</strong></td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% else %}
+                <p style="text-align: center; padding: 20px;">No contributions yet. Add your first contribution above!</p>
+            {% endif %}
+        </div>
+        
+        <!-- Goal Progress Summary -->
+        <div class="card">
+            <h2>Goal Progress Summary</h2>
+            <div style="display: grid; gap: 15px;">
+                {% for goal in goals %}
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>{{ goal.icon }} {{ goal.name }}</span>
+                            <span>UGX {{ goal.current_amount|floatformat:0 }} / UGX {{ goal.target_amount|floatformat:0 }}</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: {{ goal.progress_percentage }}%;">
+                                {{ goal.progress_percentage|floatformat:0 }}%
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p>No goals created yet. <a href="/api/goals-page/">Create a goal first</a></p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

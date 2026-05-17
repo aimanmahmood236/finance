@@ -1,0 +1,30 @@
+
+
+{% extends 'base.html' %}
+
+{% block title %}Page Title{% endblock %}
+{% block page_title %}Page Name{% endblock %}
+
+{% block content %}
+    <!-- Your existing page content here -->
+{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Category</title>
+</head>
+<body>
+    <h2>Add New Category</h2>
+    
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="type_choices" placeholder="Type_Choice" required><br>
+        <input type="text" name="name" placeholder="Name"><br>
+        <input type="icon" name="icon" placeholder="Icon"><br>
+        <input type="type name="type" placeholder="Type" required><br>
+        <button type="submit">Create Category</button>
+    </form>
+</body>
+</html>

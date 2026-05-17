@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Personal Finance Management</title>
+</head>
+<body>
+    <h1>Welcome  to my Finance management App</h1>
+    <h2>Where all business tansactions are made simple for its users</h2>
+    <a href="url">home page</a>
+   
+    <a href="{% url 'add_users_page'%}">Add Users</a>
+
+    <a href="{% url 'add_categories_page'%}">Add Categories</a>
+
+    
+    <form method=" POST ">
+        {%csrf_token%}
+        {{form}}
+
+
+    </form>
+
+    <a href="{% url 'home_page'%}">Home</a>
+</body>
+</html>

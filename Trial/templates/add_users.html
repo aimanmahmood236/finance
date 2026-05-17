@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Page Title{% endblock %}
+{% block page_title %}Page Name{% endblock %}
+
+{% block content %}
+    <!-- Your existing page content here -->
+{% endblock %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add User</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
+        input, button { margin: 10px 0; padding: 8px; width: 100%; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        .nav a { margin: 0 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/api/add-users/">Add User</a>
+        <a href="/api/add-categories/">Add Category</a>
+        <a href="/api/transactions-page/">Transactions</a>
+        <a href="/api/budgets-page/">Budgets</a>
+        <a href="/api/test-page/">Budgets</a>
+        <a href="/admin/">Admin</a>
+    </div>
+    <h2>Add New User</h2>
+    
+    {% if message %}
+        <div class="{{ message_type }}">{{ message }}</div>
+    {% endif %}
+    
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Username *</label>
+            <input type="text" name="username" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="full_name">
+        </div>
+        
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email">
+        </div>
+        
+        <div class="form-group">
+            <label>Password *</label>
+            <input type="password" name="password" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Confirm Password *</label>
+            <input type="password" name="confirm_password" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Monthly Income</label>
+            <input type="number" name="monthly_income" step="0.01" placeholder="UGX">
+        </div>
+        
+        <div class="form-group">
+            <label>Currency</label>
+            <select name="currency">
+                <option value="UGX">UGX - Ugandan Shilling</option>
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="KES">KES - Kenyan Shilling</option>
+                <option value="TZS">TZS - Tanzanian Shilling</option>
+            </select>
+        </div>
+        
+        <button type="submit">Create User</button>
+    </form>
+</body>
+</html>

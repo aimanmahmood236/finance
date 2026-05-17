@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Settings - Expense Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav a {
+            margin: 0 12px;
+            text-decoration: none;
+            color: #667eea;
+            font-weight: bold;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: bold;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-group input {
+            width: auto;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+        
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.3s;
+            width: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .divider {
+            height: 1px;
+            background: #eee;
+            margin: 20px 0;
+        }
+        
+        .section-title {
+            color: #667eea;
+            margin: 15px 0 10px 0;
+            font-size: 18px;
+        }
+        
+        .small-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .reset-btn {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+        
+        .reset-btn:hover {
+            background: #5a6268;
+        }
+        
+        .preview-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="/api/add-users/">Add User</a>
+            <a href="/api/add-categories/">Add Category</a>
+            <a href="/api/transactions-page/">Transactions</a>
+            <a href="/api/budgets-page/">Budgets</a>
+            <a href="/api/goals-page/">Goals</a>
+            <a href="/api/contributions-page/">Contributions</a>
+            <a href="/api/bills-page/">Bills</a>
+            <a href="/api/bill-payments-page/">Payments</a>
+            <a href="/api/notifications-page/">Notifications</a>
+            <a href="/api/settings-page/">Settings</a>
+            <a href="/admin/">Admin</a>
+        </div>
+        
+        <div class="card">
+            <h2>⚙️ App Settings</h2>
+            
+            {% if message %}
+                <div class="message {{ message_type }}">{{ message }}</div>
+            {% endif %}
+            
+            <form method="POST">
+                {% csrf_token %}
+                
+                <!-- Appearance Section -->
+                <h3 class="section-title">🎨 Appearance</h3>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Theme</label>
+                        <select name="theme">
+                            <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>🌞 Light</option>
+                            <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>🌙 Dark</option>
+                            <option value="system" {% if settings.theme == 'system' %}selected{% endif %}>💻 System Default</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Language</label>
+                        <select name="language">
+                            <option value="en" {% if settings.language == 'en' %}selected{% endif %}>🇬🇧 English</option>
+                            <option value="sw" {% if settings.language == 'sw' %}selected{% endif %}>🇹🇿 Swahili</option>
+                            <option value="lg" {% if settings.language == 'lg' %}selected{% endif %}>🇺🇬 Luganda</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Currency</label>
+                        <select name="currency">
+                            <option value="UGX" {% if settings.currency == 'UGX' %}selected{% endif %}>UGX - Ugandan Shilling</option>
+                            <option value="USD" {% if settings.currency == 'USD' %}selected{% endif %}>USD - US Dollar</option>
+                            <option value="EUR" {% if settings.currency == 'EUR' %}selected{% endif %}>EUR - Euro</option>
+                            <option value="GBP" {% if settings.currency == 'GBP' %}selected{% endif %}>GBP - British Pound</option>
+                            <option value="KES" {% if settings.currency == 'KES' %}selected{% endif %}>KES - Kenyan Shilling</option>
+                            <option value="TZS" {% if settings.currency == 'TZS' %}selected{% endif %}>TZS - Tanzanian Shilling</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="preview-box">
+                    <strong>💡 Preview:</strong> Your amounts will display as <strong>{{ settings.currency }}</strong> with your selected currency
+                </div>
+                
+                <div class="divider"></div>
+                
+                <!-- Notifications Section -->
+                <h3 class="section-title">🔔 Notifications</h3>
+                <div class="row">
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="notifications_enabled" id="notifications_enabled" {% if settings.notifications_enabled %}checked{% endif %}>
+                            <label for="notifications_enabled">Enable Notifications</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="budget_alerts" id="budget_alerts" {% if settings.budget_alerts %}checked{% endif %}>
+                            <label for="budget_alerts">💰 Budget Alerts</label>
+                        </div>
+                        <div class="small-text">Get notified when you exceed 80% of your budget</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="bill_reminders" id="bill_reminders" {% if settings.bill_reminders %}checked{% endif %}>
+                            <label for="bill_reminders">📅 Bill Reminders</label>
+                        </div>
+                        <div class="small-text">Receive reminders before bills are due</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="goal_milestones" id="goal_milestones" {% if settings.goal_milestones %}checked{% endif %}>
+                            <label for="goal_milestones">🎯 Goal Milestones</label>
+                        </div>
+                        <div class="small-text">Get alerts when you reach savings goals</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="weekly_summary" id="weekly_summary" {% if settings.weekly_summary %}checked{% endif %}>
+                            <label for="weekly_summary">📊 Weekly Summary</label>
+                        </div>
+                        <div class="small-text">Receive weekly spending reports</div>
+                    </div>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <!-- Security Section -->
+                <h3 class="section-title">🔒 Security</h3>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Auto-lock (minutes)</label>
+                        <input type="number" name="auto_lock_minutes" value="{{ settings.auto_lock_minutes }}" min="0" max="60">
+                        <div class="small-text">Set to 0 to disable auto-lock</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" name="biometric_login" id="biometric_login" {% if settings.biometric_login %}checked{% endif %}>
+                            <label for="biometric_login">🔐 Enable Biometric Login</label>
+                        </div>
+                        <div class="small-text">Use fingerprint or face recognition to unlock</div>
+                    </div>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <!-- Current Settings Summary -->
+                <h3 class="section-title">📋 Current Settings Summary</h3>
+                <div class="preview-box" style="text-align: left;">
+                    <p><strong>Theme:</strong> {{ settings.get_theme_display }}</p>
+                    <p><strong>Language:</strong> {{ settings.get_language_display }}</p>
+                    <p><strong>Currency:</strong> {{ settings.currency }}</p>
+                    <p><strong>Notifications:</strong> {% if settings.notifications_enabled %}Enabled{% else %}Disabled{% endif %}</p>
+                    <p><strong>Auto-lock:</strong> {% if settings.auto_lock_minutes == 0 %}Disabled{% else %}{{ settings.auto_lock_minutes }} minutes{% endif %}</p>
+                    <p><strong>Biometric Login:</strong> {% if settings.biometric_login %}Enabled{% else %}Disabled{% endif %}</p>
+                </div>
+                
+                <button type="submit">💾 Save Settings</button>
+            </form>
+            
+            <!-- Reset to Defaults -->
+            <form method="POST" action="/api/settings/reset/" style="margin-top: 15px;" onsubmit="return confirm('Reset all settings to default values?');">
+                {% csrf_token %}
+                <button type="submit" class="reset-btn">🔄 Reset to Defaults</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

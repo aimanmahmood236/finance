@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Budget Management - Personal Finance Manager{% endblock %}
+{% block page_title %}📈 Budget Management{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>💰 Monthly Budget Planner</h2>
+        <button class="btn btn-primary" onclick="showAddBudgetForm()">+ Set New Budget</button>
+    </div>
+    
+    {% if message %}
+        <div class="alert alert-{{ message_type }}">{{ message }}</div>
+    {% endif %}
+    
+    <!-- Add/Edit Budget Form -->
+    <div id="addBudgetForm" style="display: none; margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+        <h3>Set Budget for Category</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <label>Category *</label>
+                    <select name="category_id" class="form-control" required>
+                        <option value="">Select Category</option>
+                        {% for category in expense_categories %}
+                            <option value="{{ category.id }}">{{ category.icon }} {{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Month *</label>
+                    <select name="month" class="form-control" required>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Year *</label>
+                    <input type="number" name="year" value="{{ year }}" min="2020" max="2030" class="form-control" required>
+                </div>
+                <div>
+                    <label>Budget Amount (UGX) *</label>
+                    <input type="number" name="amount" step="0.01" class="form-control" placeholder="Enter budget amount" required>
+                </div>
+                <div>
+                    <label>Alert Threshold (%)</label>
+                    <input type="number" name="notification_threshold" value="80" min="0" max="100" class="form-control">
+                    <small>Get alert when spending reaches this percentage</small>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <button type="submit" class="btn btn-success">Save Budget</button>
+                <button type="button" class="btn btn-secondary" onclick="hideAddBudgetForm()">Cancel</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Filter Section -->
+    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+        <h3>Filter Budgets</h3>
+        <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+            <div>
+                <label>Month</label>
+                <select name="filter_month" class="form-control" style="width: 120px;">
+                    <option value="">All</option>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+            <div>
+                <label>Year</label>
+                <input type="number" name="filter_year" value="{{ filter_year }}" placeholder="Year" class="form-control" style="width: 100px;">
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a href="/api/budgets-page/" class="btn btn-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Budget Summary Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
+        <div class="summary-card">
+            <div class="summary-label">Total Budget</div>
+            <div class="summary-value">{{ currency }} {{ total_budget|floatformat:0|default:"0" }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Total Spent</div>
+            <div class="summary-value" style="color: #dc3545;">{{ currency }} {{ total_spent|floatformat:0|default:"0" }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Total Remaining</div>
+            <div class="summary-value" style="color: #28a745;">{{ currency }} {{ total_remaining|floatformat:0|default:"0" }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Overall Usage</div>
+            <div class="summary-value">{{ overall_percentage|floatformat:1|default:"0" }}%</div>
+            <div class="progress-bar-small">
+                <div class="progress-fill-small" style="width: {{ overall_percentage|floatformat:0 }}%; background: {% if overall_percentage > 80 %}#dc3545{% else %}#28a745{% endif %};"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Budgets Table -->
+    <div style="overflow-x: auto;">
+        <table class="budget-table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Month/Year</th>
+                    <th>Budgeted Amount</th>
+                    <th>Actual Spent</th>
+                    <th>Remaining</th>
+                    <th>Usage</th>
+                    <th>Status</th>
+                    <th>Alert Threshold</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for budget in budgets %}
+                <tr>
+                    <td>
+                        <span class="category-icon">{{ budget.category.icon|default:"📌" }}</span>
+                        <strong>{{ budget.category.name }}</strong>
+                    </td>
+                    <td>{{ budget.month }}/{{ budget.year }}</td>
+                    <td class="budgeted-amount">{{ currency }} {{ budget.amount|floatformat:0 }}</td>
+                    <td class="spent-amount">{{ currency }} {{ budget.spent|floatformat:0 }}</td>
+                    <td class="remaining-amount {% if budget.remaining < 0 %}negative{% endif %}">
+                        {{ currency }} {{ budget.remaining|floatformat:0 }}
+                    </td>
+                    <td style="min-width: 150px;">
+                        <div class="progress-container">
+                            <div class="progress-bar 
+                                {% if budget.usage_percentage < 80 %}progress-good
+                                {% elif budget.usage_percentage < 100 %}progress-warning
+                                {% else %}progress-danger{% endif %}" 
+                                style="width: {{ budget.usage_percentage|floatformat:0 }}%;">
+                            </div>
+                        </div>
+                        <div class="percentage-text">{{ budget.usage_percentage|floatformat:0 }}%</div>
+                    </td>
+                    <td>
+                        {% if budget.usage_percentage < 80 %}
+                            <span class="status-badge status-good">✓ On Track</span>
+                        {% elif budget.usage_percentage < 100 %}
+                            <span class="status-badge status-warning">⚠ Warning</span>
+                        {% else %}
+                            <span class="status-badge status-danger">✗ Exceeded</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ budget.notification_threshold }}%</td>
+                    <td>
+                        <form method="POST" action="/api/budgets/delete/{{ budget.id }}/" style="display: inline;" 
+                              onsubmit="return confirm('Delete this budget?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px;">
+                        No budgets set. Click "Set New Budget" to start planning your finances!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="2"><strong>TOTALS</strong></td>
+                    <td><strong>{{ currency }} {{ total_budget|floatformat:0|default:"0" }}</strong></td>
+                    <td><strong>{{ currency }} {{ total_spent|floatformat:0|default:"0" }}</strong></td>
+                    <td><strong>{{ currency }} {{ total_remaining|floatformat:0|default:"0" }}</strong></td>
+                    <td colspan="4"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    
+    <!-- Budget Alerts Section -->
+    {% if alerts %}
+    <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 10px;">
+        <h3 style="color: #856404;">⚠️ Budget Alerts</h3>
+        {% for alert in alerts %}
+            <div style="padding: 12px; margin: 8px 0; background: white; border-radius: 8px; border-left: 4px solid #ffc107;">
+                <strong>{{ alert.category }}</strong><br>
+                You have used <strong>{{ alert.percentage|floatformat:0 }}%</strong> of your budget.<br>
+                Spent: {{ currency }} {{ alert.spent|floatformat:0 }} / {{ currency }} {{ alert.budget|floatformat:0 }}
+                <br>Remaining: {{ currency }} {{ alert.remaining|floatformat:0 }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Spending Tips Section -->
+    <div style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; color: white;">
+        <h3>💡 Smart Budgeting Tips</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+            <div>📊 Follow the 50/30/20 rule: 50% Needs, 30% Wants, 20% Savings</div>
+            <div>🎯 Set realistic budget goals based on past spending</div>
+            <div>📅 Review your budget monthly and adjust as needed</div>
+            <div>⚠️ Keep alert thresholds at 80% to catch overspending early</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .summary-card {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid #e0e0e0;
+    }
+    .summary-label {
+        font-size: 12px;
+        color: #888;
+        margin-bottom: 5px;
+    }
+    .summary-value {
+        font-size: 24px;
+        font-weight: bold;
+    }
+    .progress-bar-small {
+        height: 4px;
+        background: #e0e0e0;
+        border-radius: 2px;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+    .progress-fill-small {
+        height: 100%;
+        border-radius: 2px;
+    }
+    .budget-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .budget-table th, .budget-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .budget-table th {
+        background: #f8f9fa;
+        font-weight: bold;
+    }
+    .budgeted-amount { font-weight: bold; color: #667eea; }
+    .spent-amount { color: #dc3545; }
+    .remaining-amount { font-weight: bold; }
+    .remaining-amount.negative { color: #dc3545; }
+    .category-icon { font-size: 18px; margin-right: 8px; }
+    .progress-container {
+        background: #e0e0e0;
+        border-radius: 10px;
+        height: 20px;
+        overflow: hidden;
+    }
+    .progress-bar {
+        height: 100%;
+        transition: width 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: white;
+    }
+    .progress-good { background: #28a745; }
+    .progress-warning { background: #ffc107; color: #333; }
+    .progress-danger { background: #dc3545; }
+    .percentage-text { text-align: center; font-size: 11px; margin-top: 3px; }
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: bold;
+    }
+    .status-good { background: #d4edda; color: #155724; }
+    .status-warning { background: #fff3cd; color: #856404; }
+    .status-danger { background: #f8d7da; color: #721c24; }
+    .total-row { background: #f8f9fa; font-weight: bold; }
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .form-control {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        font-size: 12px;
+    }
+    .card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    .alert {
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    small { font-size: 10px; color: #888; display: block; margin-top: 3px; }
+</style>
+
+<script>
+    function showAddBudgetForm() {
+        document.getElementById('addBudgetForm').style.display = 'block';
+    }
+    function hideAddBudgetForm() {
+        document.getElementById('addBudgetForm').style.display = 'none';
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notifications - Personal Finance Manager{% endblock %}
+{% block page_title %}🔔 Notification Center{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>🔔 Alerts & Notifications</h2>
+        <div>
+            {% if unread_count > 0 %}
+                <form method="POST" action="/api/notifications/mark-all-read/" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Mark All as Read</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if message %}
+        <div class="alert alert-{{ message_type }}">{{ message }}</div>
+    {% endif %}
+    
+    <!-- Filter Bar -->
+    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+        <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <select name="filter_type" class="form-control" style="width: auto;">
+                <option value="">All Types</option>
+                <option value="budget_alert" {% if filter_type == 'budget_alert' %}selected{% endif %}>💰 Budget Alerts</option>
+                <option value="bill_reminder" {% if filter_type == 'bill_reminder' %}selected{% endif %}>📅 Bill Reminders</option>
+                <option value="goal_milestone" {% if filter_type == 'goal_milestone' %}selected{% endif %}>🎯 Goal Milestones</option>
+                <option value="weekly_report" {% if filter_type == 'weekly_report' %}selected{% endif %}>📊 Weekly Reports</option>
+            </select>
+            <select name="filter_status" class="form-control" style="width: auto;">
+                <option value="">All Status</option>
+                <option value="unread" {% if filter_status == 'unread' %}selected{% endif %}>Unread</option>
+                <option value="read" {% if filter_status == 'read' %}selected{% endif %}>Read</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="/api/notifications-page/" class="btn btn-secondary">Reset</a>
+        </form>
+    </div>
+    
+    <!-- Notification List - Unique to Notifications -->
+    {% if notifications %}
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for notification in notifications %}
+                <div class="notification-item {% if not notification.is_read %}unread{% else %}read{% endif %}" 
+                     onclick="location.href='{{ notification.data.navigation_url|default:"javascript:void(0)" }}'">
+                    <div class="notification-icon">
+                        {% if notification.type == 'budget_alert' %}💰
+                        {% elif notification.type == 'bill_reminder' %}📅
+                        {% elif notification.type == 'goal_milestone' %}🎯
+                        {% elif notification.type == 'weekly_report' %}📊
+                        {% else %}🔔{% endif %}
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-title">
+                            {{ notification.title }}
+                            <span class="notification-type type-{{ notification.type }}">
+                                {% if notification.type == 'budget_alert' %}Budget Alert
+                                {% elif notification.type == 'bill_reminder' %}Bill Reminder
+                                {% elif notification.type == 'goal_milestone' %}Goal Milestone
+                                {% elif notification.type == 'weekly_report' %}Weekly Report
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="notification-message">{{ notification.message }}</div>
+                        <div class="notification-date">{{ notification.created_at|date:"M d, Y H:i" }}</div>
+                    </div>
+                    <div class="notification-actions" onclick="event.stopPropagation()">
+                        {% if not notification.is_read %}
+                            <form method="POST" action="/api/notifications/mark-read/{{ notification.id }}/" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-success">Mark Read</button>
+                            </form>
+                        {% else %}
+                            <form method="POST" action="/api/notifications/mark-unread/{{ notification.id }}/" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-warning">Mark Unread</button>
+                            </form>
+                        {% endif %}
+                        <form method="POST" action="/api/notifications/delete/{{ notification.id }}/" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this notification?')">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Statistics Summary -->
+        <div style="margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+            <div class="stat-box">
+                <div>Total Notifications</div>
+                <div class="stat-number">{{ total_count }}</div>
+            </div>
+            <div class="stat-box">
+                <div>Unread</div>
+                <div class="stat-number unread">{{ unread_count }}</div>
+            </div>
+            <div class="stat-box">
+                <div>Read</div>
+                <div class="stat-number read">{{ read_count }}</div>
+            </div>
+            <div class="stat-box">
+                <div>This Week</div>
+                <div class="stat-number">{{ weekly_count }}</div>
+            </div>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 60px;">
+            <div style="font-size: 48px;">🔔</div>
+            <h3>No Notifications</h3>
+            <p>You're all caught up! No new alerts at this time.</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .notification-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .notification-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .notification-item.unread {
+        background: linear-gradient(135deg, #f0f4ff, #e8eeff);
+        border-left: 4px solid #667eea;
+    }
+    .notification-item.read {
+        opacity: 0.7;
+    }
+    .notification-icon {
+        font-size: 32px;
+    }
+    .notification-content {
+        flex: 1;
+    }
+    .notification-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .notification-message {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    .notification-date {
+        font-size: 11px;
+        color: #999;
+    }
+    .notification-type {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-size: 10px;
+        margin-left: 10px;
+        font-weight: normal;
+    }
+    .type-budget_alert { background: #ffc107; color: #856404; }
+    .type-bill_reminder { background: #17a2b8; color: white; }
+    .type-goal_milestone { background: #28a745; color: white; }
+    .type-weekly_report { background: #667eea; color: white; }
+    .notification-actions {
+        display: flex;
+        gap: 5px;
+    }
+    .stat-box {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        border: 1px solid #e0e0e0;
+    }
+    .stat-number {
+        font-size: 28px;
+        font-weight: bold;
+        margin-top: 5px;
+    }
+    .stat-number.unread { color: #dc3545; }
+    .stat-number.read { color: #28a745; }
+</style>
+{% endblock %}

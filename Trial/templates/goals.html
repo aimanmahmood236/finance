@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Savings Goals - Personal Finance Manager{% endblock %}
+{% block page_title %}🎯 Savings Goals{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>🎯 Your Savings Goals</h2>
+        <button class="btn btn-primary" onclick="showAddGoalForm()">+ New Goal</button>
+    </div>
+    
+    {% if message %}
+        <div class="alert alert-{{ message_type }}">{{ message }}</div>
+    {% endif %}
+    
+    <!-- Add Goal Form -->
+    <div id="addGoalForm" style="display: none; margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+        <h3>Create New Goal</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <div>
+                    <label>Goal Name *</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div>
+                    <label>Icon (Emoji)</label>
+                    <input type="text" name="icon" class="form-control" value="🎯">
+                </div>
+                <div>
+                    <label>Target Amount *</label>
+                    <input type="number" name="target_amount" class="form-control" step="0.01" required>
+                </div>
+                <div>
+                    <label>Initial Amount</label>
+                    <input type="number" name="current_amount" class="form-control" step="0.01" value="0">
+                </div>
+                <div>
+                    <label>Target Date *</label>
+                    <input type="date" name="target_date" class="form-control" required>
+                </div>
+                <div>
+                    <label>Notes</label>
+                    <textarea name="notes" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <button type="submit" class="btn btn-success">Create Goal</button>
+                <button type="button" class="btn btn-secondary" onclick="hideAddGoalForm()">Cancel</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Goals List -->
+    {% if goals %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
+            {% for goal in goals %}
+                <div style="background: white; border-radius: 15px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="font-size: 20px;">{{ goal.icon }} {{ goal.name }}</h3>
+                        <form method="POST" action="/api/goals/delete/{{ goal.id }}/" onsubmit="return confirm('Delete this goal?')">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Delete</button>
+                        </form>
+                    </div>
+                    
+                    {% if goal.notes %}
+                        <p style="color: #666; margin-bottom: 15px;">{{ goal.notes }}</p>
+                    {% endif %}
+                    
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Progress</span>
+                            <span>{{ goal.progress_percentage|floatformat:0 }}%</span>
+                        </div>
+                        <div class="progress-bar" style="height: 10px;">
+                            <div class="progress-fill" style="width: {{ goal.progress_percentage }}%; background: linear-gradient(90deg, #28a745, #20c997);"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px;">
+                        <div>
+                            <small style="color: #888;">Target Amount</small>
+                            <div><strong>{{ goal.target_amount|floatformat:0 }} UGX</strong></div>
+                        </div>
+                        <div>
+                            <small style="color: #888;">Saved So Far</small>
+                            <div><strong style="color: #28a745;">{{ goal.current_amount|floatformat:0 }} UGX</strong></div>
+                        </div>
+                        <div>
+                            <small style="color: #888;">Remaining</small>
+                            <div><strong style="color: #dc3545;">{{ goal.remaining|floatformat:0 }} UGX</strong></div>
+                        </div>
+                        <div>
+                            <small style="color: #888;">Target Date</small>
+                            <div><strong>{{ goal.target_date|date:"M d, Y" }}</strong></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Add Contribution Form -->
+                    <form method="POST" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                        {% csrf_token %}
+                        <input type="hidden" name="goal_id" value="{{ goal.id }}">
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" name="amount" placeholder="Add contribution" step="0.01" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                            <button type="submit" class="btn btn-primary" style="padding: 8px 15px;">Add</button>
+                        </div>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 40px;">
+            <p>No goals yet. Create your first savings goal!</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: transform 0.2s;
+    }
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+    .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        font-size: 13px;
+    }
+    .card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    .alert {
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+</style>
+
+<script>
+    function showAddGoalForm() {
+        document.getElementById('addGoalForm').style.display = 'block';
+    }
+    function hideAddGoalForm() {
+        document.getElementById('addGoalForm').style.display = 'none';
+    }
+</script>
+{% endblock %}

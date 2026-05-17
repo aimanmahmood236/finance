@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Bills Manager - Personal Finance Manager{% endblock %}
+{% block page_title %}📅 Bills & Recurring Payments{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2>📅 Upcoming Bills</h2>
+        <button class="btn btn-primary" onclick="showAddBillForm()">+ Add New Bill</button>
+    </div>
+    
+    {% if message %}
+        <div class="alert alert-{{ message_type }}">{{ message }}</div>
+    {% endif %}
+    
+    <!-- Add Bill Form -->
+    <div id="addBillForm" style="display: none; margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+        <h3>Add New Recurring Bill</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <div>
+                    <label>Bill Name *</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g., Rent, Electricity" required>
+                </div>
+                <div>
+                    <label>Amount (UGX) *</label>
+                    <input type="number" name="amount" step="0.01" class="form-control" required>
+                </div>
+                <div>
+                    <label>Category</label>
+                    <select name="category_id" class="form-control">
+                        <option value="">Select Category</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.icon }} {{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Recurrence *</label>
+                    <select name="recurrence" class="form-control" required>
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly (Every 3 months)</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="one-time">One Time</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Due Day of Month (1-31) *</label>
+                    <input type="number" name="due_day" min="1" max="31" class="form-control" required>
+                </div>
+                <div>
+                    <label>Due Month (for yearly bills)</label>
+                    <select name="due_month" class="form-control">
+                        <option value="">Every month</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Reminder (days before)</label>
+                    <input type="number" name="reminder_days_before" value="3" class="form-control">
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <button type="submit" class="btn btn-success">Save Bill</button>
+                <button type="button" class="btn btn-secondary" onclick="hideAddBillForm()">Cancel</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Bills List - Unique to Bills -->
+    <div style="overflow-x: auto;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Bill Name</th>
+                    <th>Amount</th>
+                    <th>Due Day</th>
+                    <th>Recurrence</th>
+                    <th>Next Due</th>
+                    <th>Status</th>
+                    <th>Reminder</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bill in bills %}
+                <tr class="{% if bill.days_until_due <= bill.reminder_days_before and bill.days_until_due >= 0 %}due-soon{% elif bill.days_until_due < 0 %}overdue{% endif %}">
+                    <td>
+                        <strong>{{ bill.name }}</strong><br>
+                        <small>{{ bill.category.icon|default:"📌" }} {{ bill.category.name|default:"Uncategorized" }}</small>
+                    </td>
+                    <td class="bill-amount">UGX {{ bill.amount|floatformat:0 }}</td>
+                    <td>Day {{ bill.due_day }}{% if bill.due_month %} ({{ bill.get_due_month_display }}){% endif %}</td>
+                    <td>
+                        <span class="badge {% if bill.recurrence == 'monthly' %}badge-monthly{% elif bill.recurrence == 'quarterly' %}badge-quarterly{% elif bill.recurrence == 'yearly' %}badge-yearly{% else %}badge-onetime{% endif %}">
+                            {{ bill.get_recurrence_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if bill.next_due_date %}
+                            {{ bill.next_due_date|date:"M d, Y" }}
+                            {% if bill.days_until_due < 0 %}
+                                <span class="overdue-text">(Overdue!)</span>
+                            {% elif bill.days_until_due <= bill.reminder_days_before %}
+                                <span class="due-soon-text">Due in {{ bill.days_until_due }} days!</span>
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if bill.is_active %}
+                            <span class="badge badge-active">Active</span>
+                        {% else %}
+                            <span class="badge badge-inactive">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ bill.reminder_days_before }} days before</td>
+                    <td>
+                        <form method="POST" action="/api/bills/mark-paid/{{ bill.id }}/" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Mark this bill as paid?')">✓ Paid</button>
+                        </form>
+                        <form method="POST" action="/api/bills/toggle/{{ bill.id }}/" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-warning">{% if bill.is_active %}🔴 Deactivate{% else %}🟢 Activate{% endif %}</button>
+                        </form>
+                        <form method="POST" action="/api/bills/delete/{{ bill.id }}/" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this bill?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center;">No bills yet. Add your first bill!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Upcoming Alerts Section - Unique to Bills -->
+    {% if upcoming_bills %}
+    <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 10px;">
+        <h3>⚠️ Upcoming Bill Alerts</h3>
+        {% for bill in upcoming_bills %}
+            <div style="padding: 10px; margin: 5px 0; background: white; border-radius: 8px;">
+                <strong>{{ bill.name }}</strong> - Due in {{ bill.days_until_due }} days on {{ bill.next_due_date|date:"M d, Y" }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .due-soon { background: #fff3cd; }
+    .overdue { background: #f8d7da; }
+    .due-soon-text { color: #ffc107; font-size: 11px; }
+    .overdue-text { color: #dc3545; font-size: 11px; }
+    .bill-amount { color: #dc3545; font-weight: bold; }
+    .badge-active { background: #28a745; color: white; }
+    .badge-inactive { background: #6c757d; color: white; }
+    .badge-monthly { background: #667eea; color: white; }
+    .badge-quarterly { background: #17a2b8; color: white; }
+    .badge-yearly { background: #ffc107; color: #333; }
+    .badge-onetime { background: #6c757d; color: white; }
+    .btn-warning { background: #ffc107; color: #333; }
+</style>
+
+<script>
+    function showAddBillForm() {
+        document.getElementById('addBillForm').style.display = 'block';
+    }
+    function hideAddBillForm() {
+        document.getElementById('addBillForm').style.display = 'none';
+    }
+</script>
+{% endblock %}
